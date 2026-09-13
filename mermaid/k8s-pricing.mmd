@@ -1,0 +1,22 @@
+flowchart TB
+  subgraph zoneK8s["zone-k8s 10.50.8.0/24"]
+    subgraph ns["namespace pricing"]
+      ing[Ingress]
+      svc[Service pricing]
+      dep[Deployment pricing]
+      pod1[Pod]
+      pod2[Pod]
+    end
+  end
+  subgraph zoneApps["zone-apps"]
+    panel[Panel API on VM]
+  end
+  redis[(Redis 10.50.3.32)]
+
+  panel --> ing
+  ing --> svc
+  svc --> dep
+  dep --> pod1
+  dep --> pod2
+  pod1 --> redis
+  pod2 --> redis

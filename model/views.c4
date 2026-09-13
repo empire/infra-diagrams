@@ -1,0 +1,91 @@
+views {
+  view index {
+    title 'Promise landscape'
+    description 'C4 context. Customer, Promise, SMS vendor.'
+    include *
+  }
+
+  view containers of promise {
+    title 'Promise containers'
+    include *
+    include customer
+    include sms
+  }
+
+  view panel_zoom of promise.panel {
+    title 'Panel zoom'
+    include *
+    include customer
+    include * -> *
+  }
+
+  view datastores of promise.datastore {
+    title 'Datastores'
+    include *
+    include * <-> *
+  }
+
+  view blast_redis {
+    title 'Blast: Redis down'
+    description 'Services tagged #uses-redis plus Redis itself. Session and quote cache fail together.'
+    include promise.panel
+    include promise.panel.api
+    include promise.pricing.api
+    include promise.datastore.redis
+    include promise.panel.api -> promise.datastore.redis
+    include promise.pricing.api -> promise.datastore.redis
+    style promise.datastore.redis {
+      color red
+    }
+    style promise.panel, promise.panel.api, promise.pricing.api {
+      color amber
+    }
+  }
+
+  view blast_postgres {
+    title 'Blast: PostgreSQL down'
+    include promise.panel.api
+    include promise.wallet.api
+    include promise.datastore.pg
+    include promise.panel.api -> promise.datastore.pg
+    include promise.wallet.api -> promise.datastore.pg
+    style promise.datastore.pg {
+      color red
+    }
+    style promise.panel.api, promise.wallet.api {
+      color amber
+    }
+  }
+
+  dynamic view buy_confirm {
+    title 'Buy confirm sequence'
+    description 'Leaf hops only. Toggle Sequence in the LikeC4 UI, or pass --sequence to export.'
+    customer -> promise.panel.ui 'opens Panel'
+    promise.panel.ui -> promise.edge.nginx 'POST /buy/confirm'
+    promise.edge.nginx -> promise.edge.haproxy 'forward'
+    promise.edge.haproxy -> promise.panel.api 'HTTP'
+    promise.panel.api -> promise.datastore.redis 'session'
+    promise.panel.api -> promise.wallet.api 'confirm'
+    promise.wallet.api -> promise.datastore.pg 'ledger write'
+    promise.panel.api -> promise.bus 'buy.confirmed'
+    promise.panel.ui <- promise.panel.api '200'
+  }
+
+  deployment view onprem {
+    title 'On-prem zones'
+    include env.**
+  }
+
+  deployment view k8s {
+    title 'Kubernetes: pricing'
+    include env.z_k8s.**
+    include env.z_apps.panel_vm
+  }
+
+  deployment view data_plane {
+    title 'Data plane VMs'
+    include env.z_data.**
+    include env.z_msg.**
+    include env.z_apps.**
+  }
+}

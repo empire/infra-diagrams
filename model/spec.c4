@@ -1,0 +1,55 @@
+specification {
+  element actor {
+    style {
+      shape person
+    }
+  }
+  element system
+  element service
+  element component
+  element database {
+    style {
+      shape storage
+    }
+  }
+  element queue {
+    style {
+      shape queue
+    }
+  }
+
+  deploymentNode environment
+  deploymentNode zone
+  deploymentNode vlan
+  deploymentNode vm {
+    notation 'Virtual Machine'
+  }
+  deploymentNode kubernetes {
+    style {
+      color blue
+      icon tech:kubernetes
+    }
+  }
+  deploymentNode namespace
+  deploymentNode workload
+
+  relationship sync {
+    line solid
+  }
+  relationship async {
+    line dotted
+    color amber
+  }
+
+  tag uses-redis {
+    color amber
+  }
+  tag uses-postgres {
+    color green
+  }
+  tag critical-path {
+    color red
+  }
+  tag edge
+  tag data
+}

@@ -1,0 +1,90 @@
+model {
+  customer = actor 'Customer' {
+    description 'Person buying or selling through Promise.'
+  }
+
+  promise = system 'Promise' {
+    description 'On-prem Promise platform. Logical C4 model. Deployment lives in deploy.c4.'
+
+    edge = service 'Edge' {
+      #edge
+      description 'TLS termination and routing at the site edge.'
+      nginx = component 'Nginx' {
+        technology 'nginx'
+        icon tech:nginx
+      }
+      haproxy = component 'HAProxy' {
+        technology 'HAProxy'
+      }
+    }
+
+    panel = service 'Panel' {
+      #uses-redis, #critical-path
+      description 'Customer web app.'
+      ui = component 'Panel UI' {
+        technology 'browser'
+        style {
+          shape browser
+        }
+      }
+      api = component 'Panel API' {
+        #uses-redis, #uses-postgres, #critical-path
+        technology 'HTTP'
+      }
+    }
+
+    wallet = service 'Wallet' {
+      #uses-postgres, #critical-path
+      description 'Balances and confirm.'
+      api = component 'Wallet API' {
+        #uses-postgres, #critical-path
+      }
+    }
+
+    notify = service 'Notify' {
+      description 'Outbound SMS and email.'
+      worker = component 'Notify worker'
+    }
+
+    pricing = service 'Pricing' {
+      description 'Quote service. New path, runs on Kubernetes.'
+      api = component 'Pricing API' {
+        #uses-redis
+      }
+    }
+
+    datastore = service 'Datastores' {
+      #data
+      pg = database 'PostgreSQL' {
+        #uses-postgres
+        icon tech:postgresql
+      }
+      redis = database 'Redis' {
+        #uses-redis
+        icon tech:redis
+      }
+    }
+
+    bus = queue 'Kafka' {
+      icon tech:kafka
+    }
+  }
+
+  sms = system 'SMS vendor' {
+    description 'External SMS gateway. Not ours to run.'
+  }
+
+  customer -> promise.panel.ui 'opens Panel'
+  promise.panel.ui -> promise.edge.nginx 'HTTPS'
+  promise.edge.nginx -> promise.edge.haproxy 'forward'
+  promise.edge.haproxy -> promise.panel.api 'HTTP'
+  promise.panel.api -> promise.wallet.api 'confirm / balance'
+  promise.panel.api -> promise.pricing.api 'quote'
+  promise.panel.api -> promise.datastore.redis 'session / cache'
+  promise.panel.api -> promise.datastore.pg 'read / write'
+  promise.wallet.api -> promise.datastore.pg 'ledger'
+  promise.pricing.api -> promise.datastore.redis 'quote cache'
+  promise.panel.api .async promise.bus 'domain events'
+  promise.notify.worker -> promise.bus 'consume'
+  promise.notify.worker -> sms 'send SMS'
+}

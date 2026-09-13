@@ -1,0 +1,17 @@
+{
+  "name": "sample-infra",
+  "private": true,
+  "description": "Local on-prem infrastructure diagrams. LikeC4 is the model; Mermaid is the sequence fallback.",
+  "type": "module",
+  "scripts": {
+    "start": "likec4 start",
+    "preview": "likec4 start",
+    "build": "likec4 build ./site",
+    "export:png": "likec4 export png -o ./export",
+    "mermaid": "mmdc -i mermaid/buy-confirm.mmd -o export/buy-confirm.svg"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.12.0",
+    "likec4": "1.59.3"
+  }
+}

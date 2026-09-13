@@ -1,0 +1,77 @@
+deployment {
+  env = environment 'on-prem' {
+    description 'Promise site. Sample CIDRs, not a live inventory.'
+
+    z_edge = zone 'zone-edge' {
+      description '10.50.1.0/24 · TLS and load-balance'
+      fw = vm 'edge-fw' {
+        title 'Firewall / VIP'
+        technology '10.50.1.1'
+      }
+      ngx = vm 'edge-nginx' {
+        title 'nginx-a'
+        technology '10.50.1.10'
+        instanceOf promise.edge.nginx
+      }
+      hap = vm 'edge-haproxy' {
+        title 'haproxy-a'
+        technology '10.50.1.11'
+        instanceOf promise.edge.haproxy
+      }
+    }
+
+    z_apps = zone 'zone-apps' {
+      description '10.50.2.0/24 · public apps'
+      panel_vm = vm 'app-panel' {
+        title 'panel-a'
+        technology '10.50.2.21'
+        instanceOf promise.panel.ui
+        instanceOf promise.panel.api
+      }
+      wallet_vm = vm 'app-wallet' {
+        title 'wallet-a'
+        technology '10.50.2.22'
+        instanceOf promise.wallet.api
+      }
+      notify_vm = vm 'app-notify' {
+        title 'notify-a'
+        technology '10.50.2.23'
+        instanceOf promise.notify.worker
+      }
+    }
+
+    z_data = zone 'zone-data' {
+      description '10.50.3.0/24 · datastores'
+      pg_vm = vm 'data-pg' {
+        title 'postgres-a'
+        technology '10.50.3.31'
+        instanceOf promise.datastore.pg
+      }
+      redis_vm = vm 'data-redis' {
+        title 'redis-a'
+        technology '10.50.3.32'
+        instanceOf promise.datastore.redis
+      }
+    }
+
+    z_msg = zone 'zone-msg' {
+      description '10.50.5.0/24 · Kafka'
+      kafka_vm = vm 'msg-kafka' {
+        title 'kafka-a'
+        technology '10.50.5.51'
+        instanceOf promise.bus
+      }
+    }
+
+    z_k8s = zone 'zone-k8s' {
+      description '10.50.8.0/24 · one cluster for new services'
+      cluster = kubernetes 'promise-k8s' {
+        ns = namespace 'pricing' {
+          deploy = workload 'pricing-deploy' {
+            instanceOf promise.pricing.api
+          }
+        }
+      }
+    }
+  }
+}

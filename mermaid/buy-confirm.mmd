@@ -1,0 +1,21 @@
+sequenceDiagram
+  autonumber
+  actor Customer
+  participant UI as Panel UI
+  participant NGX as Nginx
+  participant HAP as HAProxy
+  participant API as Panel API
+  participant Redis
+  participant Wallet as Wallet API
+  participant PG as PostgreSQL
+  participant Kafka
+
+  Customer->>UI: open Panel
+  UI->>NGX: POST /buy/confirm
+  NGX->>HAP: forward
+  HAP->>API: HTTP
+  API->>Redis: session
+  API->>Wallet: confirm
+  Wallet->>PG: ledger write
+  API->>Kafka: buy.confirmed
+  API-->>UI: 200
